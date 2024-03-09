@@ -1,16 +1,24 @@
 #include "MechanicalButton.h"
 
-MechanicalButton::MechanicalButton(int pin, unsigned long debounceDelay) {
+MechanicalButton::MechanicalButton(int pin, Mode mode, unsigned long debounceDelay) {
     _pin = pin;
+    _mode = mode;
     _debounceDelay = debounceDelay;
-    _state = HIGH;
-    _lastState = HIGH;
     _pressed = false;
     _released = false;
     _holdFlag = false;
     _lastDebounceTime = 0;
     _lastPressTime = 0;
-    pinMode(_pin, INPUT_PULLUP);
+
+    if (_mode == PULLUP) {
+        pinMode(_pin, INPUT_PULLUP);
+        _state = HIGH;
+        _lastState = HIGH;
+    } else { // PULLDOWN
+        pinMode(_pin, INPUT_PULLDOWN);
+        _state = LOW;
+        _lastState = LOW;
+    }
 }
 
 void MechanicalButton::update() {
@@ -21,7 +29,7 @@ void MechanicalButton::update() {
     if ((millis() - _lastDebounceTime) > _debounceDelay) {
         if (reading != _state) {
             _state = reading;
-            if (_state == LOW) {
+            if ((_state == LOW && _mode == PULLUP) || (_state == HIGH && _mode == PULLDOWN)) {
                 _pressed = true;
                 _lastPressTime = millis();
             } else {
@@ -42,7 +50,7 @@ bool MechanicalButton::isPressed() {
 }
 
 bool MechanicalButton::wasPressed() {
-    return _state == LOW;
+    return (_mode == PULLUP) ? _state == LOW : _state == HIGH;
 }
 
 bool MechanicalButton::wasReleased() {
@@ -54,7 +62,8 @@ bool MechanicalButton::wasReleased() {
 }
 
 bool MechanicalButton::isHeld(unsigned long holdTime) {
-    if (_state == LOW && !_holdFlag && (millis() - _lastPressTime >= holdTime)) {
+    bool condition = (_mode == PULLUP) ? _state == LOW : _state == HIGH;
+    if (condition && !_holdFlag && (millis() - _lastPressTime >= holdTime)) {
         _holdFlag = true;
         return true;
     }
