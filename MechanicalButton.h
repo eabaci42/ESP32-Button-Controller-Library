@@ -1,3 +1,4 @@
+// MechanicalButton.h
 #ifndef MECHANICALBUTTON_H
 #define MECHANICALBUTTON_H
 
@@ -5,8 +6,7 @@
 
 class MechanicalButton {
 public:
-    enum Mode { PULLUP, PULLDOWN };
-    MechanicalButton(int pin, Mode mode, unsigned long debounceDelay = 50);
+    MechanicalButton(int pin, int mode, unsigned long debounceDelay = 50);
     void update();
     bool isPressed();
     bool wasPressed();
@@ -15,7 +15,7 @@ public:
 
 private:
     int _pin;
-    Mode _mode;
+    int _mode; // 0 for pull-up, 1 for pull-down
     unsigned long _debounceDelay;
     unsigned long _lastDebounceTime;
     unsigned long _lastPressTime;

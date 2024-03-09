@@ -1,24 +1,19 @@
+// MechanicalButton.cpp
 #include "MechanicalButton.h"
 
-MechanicalButton::MechanicalButton(int pin, Mode mode, unsigned long debounceDelay) {
+MechanicalButton::MechanicalButton(int pin, int mode, unsigned long debounceDelay) {
     _pin = pin;
-    _mode = mode;
+    _mode = mode; // Save the mode (0 for pull-up, 1 for pull-down)
     _debounceDelay = debounceDelay;
     _pressed = false;
     _released = false;
     _holdFlag = false;
     _lastDebounceTime = 0;
     _lastPressTime = 0;
+    pinMode(_pin, INPUT); // Always set to INPUT mode
 
-    if (_mode == PULLUP) {
-        pinMode(_pin, INPUT_PULLUP);
-        _state = HIGH;
-        _lastState = HIGH;
-    } else { // PULLDOWN
-        pinMode(_pin, INPUT_PULLDOWN);
-        _state = LOW;
-        _lastState = LOW;
-    }
+    _state = (_mode == 0) ? HIGH : LOW; // Initialize based on mode
+    _lastState = _state;
 }
 
 void MechanicalButton::update() {
@@ -29,7 +24,8 @@ void MechanicalButton::update() {
     if ((millis() - _lastDebounceTime) > _debounceDelay) {
         if (reading != _state) {
             _state = reading;
-            if ((_state == LOW && _mode == PULLUP) || (_state == HIGH && _mode == PULLDOWN)) {
+            // Adjust logic based on the mode
+            if ((_mode == 0 && _state == LOW) || (_mode == 1 && _state == HIGH)) {
                 _pressed = true;
                 _lastPressTime = millis();
             } else {
@@ -50,7 +46,8 @@ bool MechanicalButton::isPressed() {
 }
 
 bool MechanicalButton::wasPressed() {
-    return (_mode == PULLUP) ? _state == LOW : _state == HIGH;
+    // Adjust logic based on the mode
+    return (_mode == 0) ? _state == LOW : _state == HIGH;
 }
 
 bool MechanicalButton::wasReleased() {
@@ -62,7 +59,7 @@ bool MechanicalButton::wasReleased() {
 }
 
 bool MechanicalButton::isHeld(unsigned long holdTime) {
-    bool condition = (_mode == PULLUP) ? _state == LOW : _state == HIGH;
+    bool condition = (_mode == 0) ? _state == LOW : _state == HIGH;
     if (condition && !_holdFlag && (millis() - _lastPressTime >= holdTime)) {
         _holdFlag = true;
         return true;
